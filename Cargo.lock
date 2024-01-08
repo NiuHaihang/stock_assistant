@@ -1639,7 +1639,7 @@ dependencies = [
  "clap",
  "dotenv",
  "reqwest",
- "ring 0.16.20",
+ "ring 0.17.7",
  "serde",
  "serde_json",
  "sqlx",
