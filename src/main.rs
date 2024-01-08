@@ -1,9 +1,7 @@
+use core::time;
 use std::error::Error; // 使用 use 引入一个标准库的包，或者第三方的包
 
 use axum::{routing::get, Router};
-use clap::Parser; // clap 是一个 Rust 社区开发的命令行参数解析库
-use reqwest::blocking::Client; // reqwest 是一个 Rust 社区开发的 HTTP 客户端库
-use reqwest::header::HeaderMap;
 use std::net::SocketAddr;
 
 /// Rust 程序入口
@@ -48,4 +46,25 @@ async fn get_stock_data() -> Result<(), Box<dyn Error>> {
         }
         Err(_e) => Ok(()),
     }
+}
+
+const WEBHOOK_URL: &str="https://open.feishu.cn/open-apis/bot/v2/hook/13658ca3-74d9-4fff-abe7-2cfb8e0e0da2";
+const WEBHOOK_SECRET:&str="TgliN11mPBnZCZIQuKg39";
+use chrono::prelude::*;
+use ring::{hmac, signature};
+use std::string::FromUtf8Error;
+use std::str;
+fn generate_signature()->Result<String,FromUtf8Error>{
+    let now = Local::now();
+    let time_stamp =now.timestamp();
+
+    let mut str_to_sign = time_stamp.to_string()+"\n"+WEBHOOK_SECRET;
+    
+    let key = hmac::Key::new(hmac::HMAC_SHA256,WEBHOOK_SECRET.as_bytes());
+    let signature = hmac::sign(&key, str_to_sign.as_bytes());
+    String::from_utf8(signature.as_ref().to_vec())
+}
+
+async fn send_robot_msg()->Result<String,dyn Error>{
+    let signature= 
 }
