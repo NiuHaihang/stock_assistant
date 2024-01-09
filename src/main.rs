@@ -52,21 +52,31 @@ async fn get_stock_data() -> Result<(), Box<dyn Error>> {
 
 const WEBHOOK_URL: &str =
     "https://open.feishu.cn/open-apis/bot/v2/hook/13658ca3-74d9-4fff-abe7-2cfb8e0e0da2";
-const WEBHOOK_SECRET: &str = "TgliN11mPBnZCZIQuKg39";
-use chrono::prelude::*;
-use ring::{hmac, signature};
+const WEBHOOK_SECRET: &str = "fGn4MgckPni3okA7zEtf8c";
 use base64::encode;
+use chrono::prelude::*;
+use hmac::{Hmac, Mac};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use sha2::Sha256;
+// use ring::hmac;
 use std::str;
 use std::string::FromUtf8Error;
 fn generate_signature(t: i64) -> Result<String, FromUtf8Error> {
-    let str_to_sign=format!("{}\n{}",t.to_string(),WEBHOOK_SECRET);
+    let str_to_sign = format!("{}\n{}", t.to_string(), WEBHOOK_SECRET);
     println!("{str_to_sign}");
-    let key = hmac::Key::new(hmac::HMAC_SHA256, WEBHOOK_SECRET.as_bytes());
-    let signature = hmac::sign(&key, str_to_sign.as_bytes());
+    // let key = hmac::Key::new(hmac::HMAC_SHA256, WEBHOOK_SECRET.as_bytes());
+    // let signature = hmac::sign(&key, str_to_sign.as_bytes());
+    // let sig = encode(signature.as_ref().to_owned());
 
-    Ok(encode(signature))
+    type HmacSha256 = Hmac<Sha256>;
+    let mut mac = HmacSha256::new_from_slice(WEBHOOK_SECRET.as_bytes())
+        .expect("Hmac can take key of any size!");
+    mac.update(str_to_sign.as_bytes());
+    let res = mac.finalize();
+
+    let sig = encode(res.into_bytes());
+
+    Ok(sig)
 }
 #[derive(Serialize, Deserialize)]
 struct MsgContent {
@@ -77,7 +87,6 @@ struct MsgContent {
 }
 
 async fn send_msg() -> String {
-    println!("send msg");
     let res = send_robot_msg().await;
     match res {
         Ok(s) => s,
@@ -87,8 +96,11 @@ async fn send_msg() -> String {
 
 async fn send_robot_msg() -> Result<String, Box<dyn Error>> {
     let now = Local::now();
+    println!("{:?}", now.to_rfc3339());
     let time_stamp = now.timestamp();
     let signature = generate_signature(time_stamp)?;
+
+    println!("{signature}");
 
     let content = MsgContent {
         msg_type: "text".to_string(),
@@ -105,7 +117,6 @@ async fn send_robot_msg() -> Result<String, Box<dyn Error>> {
     let cli = reqwest::Client::new();
 
     let content_str = serde_json::to_string(&content)?;
-    println!("msg is sending");
     let resp = cli
         .post(WEBHOOK_URL)
         .header("Content-Type", "application/json")
