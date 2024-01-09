@@ -69,9 +69,9 @@ fn generate_signature(t: i64) -> Result<String, FromUtf8Error> {
     // let sig = encode(signature.as_ref().to_owned());
 
     type HmacSha256 = Hmac<Sha256>;
-    let mut mac = HmacSha256::new_from_slice(WEBHOOK_SECRET.as_bytes())
+    let mut mac = HmacSha256::new_from_slice(str_to_sign.as_bytes())
         .expect("Hmac can take key of any size!");
-    mac.update(str_to_sign.as_bytes());
+    mac.update(b"");
     let res = mac.finalize();
 
     let sig = encode(res.into_bytes());
@@ -95,7 +95,7 @@ async fn send_msg() -> String {
 }
 
 async fn send_robot_msg() -> Result<String, Box<dyn Error>> {
-    let now = Local::now();
+    let now = Utc::now();
     println!("{:?}", now.to_rfc3339());
     let time_stamp = now.timestamp();
     let signature = generate_signature(time_stamp)?;
