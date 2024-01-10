@@ -78,10 +78,10 @@ fn generate_signature(t: i64) -> Result<String, FromUtf8Error> {
 
     Ok(sig)
 }
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize,Debug)]
 struct MsgContent {
     msg_type: String,
-    time_stamp: String,
+    timestamp: String,
     sign: String,
     content: String,
 }
@@ -95,7 +95,7 @@ async fn send_msg() -> String {
 }
 
 async fn send_robot_msg() -> Result<String, Box<dyn Error>> {
-    let now = Utc::now();
+    let now = Local::now();
     println!("{:?}", now.to_rfc3339());
     let time_stamp = now.timestamp();
     let signature = generate_signature(time_stamp)?;
@@ -104,10 +104,12 @@ async fn send_robot_msg() -> Result<String, Box<dyn Error>> {
 
     let content = MsgContent {
         msg_type: "text".to_string(),
-        time_stamp: time_stamp.to_string(),
+        timestamp: time_stamp.to_string(),
         sign: signature,
         content: r#"{"text":"hello"}"#.to_string(),
     };
+
+    println!("content=:{:?}",content);
     // let mut map = HashMap::new();
     // map.insert("msg_type", "text".to_string());
     // map.insert("time_stamp", time_stamp.to_string());
